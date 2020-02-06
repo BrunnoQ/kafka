@@ -1,5 +1,6 @@
 package br.com.brunno;
 
+import java.util.Objects;
 import java.util.Properties;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -15,9 +16,16 @@ public class NovaOrdem {
     public static void main(String[] args) {
         try (var producer = new KafkaProducer<String, String>(propiedades())) {
             var chave = "1";
-            var mensagem = "tenis,vendido";
+            var mensagem = "roupa,vendido";
             var record = new ProducerRecord<String, String>("ECOMMERCE_NOVA_ORDEM", chave, mensagem);
-            producer.send(record);
+            //producer.send(record); Forma assincrona de processamento
+            producer.send(record, (metada,ex) -> {
+                if (Objects.nonNull(ex)){
+                    ex.printStackTrace();
+                    return;
+                }
+                System.out.println("sucesso enviado--> " + metada.topic() + ":::partition " + metada.partition() + "/ offset "+ metada.offset());
+            }).get(); //Implementado a INTERFACE Callback com uma classe Anonima.
         } catch (Exception e) {
             // TODO: handle exception
         }
